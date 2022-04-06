@@ -109,6 +109,22 @@ enum class SplitKMode {
   kParallel
 };
 
+enum class ImplicitGemmMode { GEMM_NT, GEMM_TN };
+
+enum class SpecialOptimizeDesc {
+    NONE = 0,
+    CONV_FILTER_UNITY = 1,
+    DECONV_DOUBLE_UPSAMPLING = 2
+};
+
+enum class ConvType : uint32_t {
+    kConvolution = 0,
+    kBatchConvolution = 1,
+    kLocal = 2,
+    kLocalShare = 3,
+    kDepthwiseConvolution = 4,
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 } // namespace conv

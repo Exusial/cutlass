@@ -151,28 +151,23 @@ struct global_load<AccessType,
   }
 };
 
-template <typename AccessType>
-struct global_load<AccessType,
-                   4
-                  > {
-  CUTLASS_DEVICE
-  global_load(AccessType &D, void const *ptr, bool pred_guard) {
-  unsigned &data = reinterpret_cast<unsigned &>(D);
+template <typename AccessType> // bug func
+struct global_load<AccessType, 4> {
+    CUTLASS_DEVICE
+    global_load(AccessType& D, void const* ptr, bool pred_guard,
+                uint32_t pack_pad = 0) {
+        unsigned& data = reinterpret_cast<unsigned&>(D);
 
-    asm volatile(
-        "{\n"
-        "  .reg .pred p;\n"
-        "  setp.ne.b32 p, %2, 0;\n"
-        "  mov.b32 %0, %3;\n"
-#if CUTLASS_ENABLE_L2_PREFETCH
-        "  @p ld.global.L2::128B.u32 %0, [%1];\n"
-#else
-        "  @p ld.global.u32 %0, [%1];\n"
-#endif
-        "}\n"
-        : "=r"(data)
-        : "l"(ptr), "r"((int)pred_guard), "r"(data));
-  }
+        asm volatile(
+                "{\n"
+                "  .reg .pred p;\n"
+                "  setp.ne.b32 p, %1, 0;\n"
+                "  mov.b32 %0, %2;\n"
+                "  @p ld.global.u32 %0, [%3];\n"
+                "}\n"
+                : "=r"(data)                                       // 0
+                : "r"((int)pred_guard), "r"(pack_pad), "l"(ptr));  // 1, 2, 3
+    }
 };
 
 template <typename AccessType>

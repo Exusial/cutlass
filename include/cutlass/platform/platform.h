@@ -842,5 +842,7 @@ struct numeric_limits<uint8_t> {
   static constexpr bool is_integer = true;
 };
 
+struct none_type {};
+
 }  // namespace platform
 }  // namespace cutlass

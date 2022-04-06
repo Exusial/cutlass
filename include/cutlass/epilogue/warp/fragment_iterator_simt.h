@@ -55,7 +55,9 @@ template <
   typename WarpShape,             ///< shape of warp-level GEMM (concept: MatrixShape)
   typename Operator,              ///< matrix multiply operation (concept: arch::Mma)
   typename Layout,                ///< target shared memory layout
-  typename MmaSimtPolicy          ///< policy defining lane arrangement (concept: MmaSimtPolicy)
+  typename MmaSimtPolicy,          ///< policy defining lane arrangement (concept: MmaSimtPolicy)
+  typename Policy = SimtPolicy<WarpShape, Operator, Layout,
+                                       MmaSimtPolicy>  ///< Policy
 >
 class FragmentIteratorSimt;
 
@@ -147,6 +149,87 @@ public:
       frag_ptr[n] = accumulators_[accumulator_access_offset];
     }
   }
+};
+
+template <typename WarpShape_,      ///< shape of the warp-level GEMM tile
+          typename Operator_,       ///< matrix multiply operator (concept:
+                                    ///< arch::Mma)
+          typename Layout_,         ///< target shared memory layout
+          typename MmaSimtPolicy_,  ///< policy defining lane arrangement
+                                    ///< (concept: MmaSimtPolicy)
+          typename Policy_>
+class FragmentIteratorSimt {
+public:
+    using WarpShape = WarpShape_;
+    using Operator = Operator_;
+    using Layout = Layout_;
+
+    /// Policy for warp-level epilogue components
+    using Policy = Policy_;
+
+    /// This is the fragment size produced by one access of the iterator.
+    using Fragment =
+            Array<typename Operator::ElementC, Policy::kElementsPerIteration>;
+
+    /// This is the complete warp-level accumulator tile.
+    using AccumulatorTile = Array<typename Operator::ElementC,
+                                  Policy::kAccumulatorElementCount>;
+
+    using OutputAccumulatorTile = AccumulatorTile;
+
+    /// Number of times this iterator can be incremented
+    static int const kIterations = Policy::kIterations;
+
+private:
+    /// Internal access type
+    using AccessType =
+            Array<typename Operator::ElementC, Policy::kElementsPerAccess>;
+
+private:
+    //
+    // Data members
+    //
+
+    /// Accumulator tile
+    AccessType const* accumulators_;
+
+    /// Internal index
+    int index_;
+
+public:
+    /// Constructs an iterator
+    CUTLASS_HOST_DEVICE
+    FragmentIteratorSimt(AccumulatorTile const& accum)
+            : accumulators_(reinterpret_cast<AccessType const*>(&accum)),
+              index_(0) {}
+
+    /// Increments
+    CUTLASS_HOST_DEVICE
+    FragmentIteratorSimt& operator++() {
+        ++index_;
+        return *this;
+    }
+
+    /// Decrements
+    CUTLASS_HOST_DEVICE
+    FragmentIteratorSimt& operator--() {
+        --index_;
+        return *this;
+    }
+
+    /// Loads a fragment from the referenced part of the accumulator tile
+    CUTLASS_HOST_DEVICE
+    void load(Fragment& frag, int index_offset = 0) const {
+        AccessType* frag_ptr = reinterpret_cast<AccessType*>(&frag);
+
+        CUTLASS_PRAGMA_UNROLL
+        for (int n = 0; n < Policy::kAccessesPerIteration; ++n) {
+            int accumulator_access_offset =
+                    index_ * Policy::kAccessesPerIteration + n;
+
+            frag_ptr[n] = accumulators_[accumulator_access_offset];
+        }
+    }
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
