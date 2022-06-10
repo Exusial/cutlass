@@ -369,7 +369,6 @@ public:
   /// Helper returns a layout to a tightly packed tensor
   CUTLASS_HOST_DEVICE
   static TensorNCHW packed(TensorCoord const &extent) {
-    printf("%d %d %d\n", extent.w(), extent.h(), extent.c());
     return TensorNCHW(
       make_Coord(
         extent.w(),
