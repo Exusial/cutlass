@@ -763,16 +763,16 @@ struct NumericArrayConverter<T, T, N, Round, Transform> {
   using source_type = Array<T, N>;
   static FloatRoundStyle const round_style = Round;
 
-    // struct Params {
-    //     CUTLASS_HOST_DEVICE
-    //     Params(){};
-    // };
+  struct Params {
+      CUTLASS_HOST_DEVICE
+      Params(){};
+  };
 
-    // CUTLASS_HOST_DEVICE
-    // NumericArrayConverter() {}
+  CUTLASS_HOST_DEVICE
+  NumericArrayConverter() {}
 
-    // CUTLASS_HOST_DEVICE
-    // NumericArrayConverter(Params const& /* params */) {}
+  CUTLASS_HOST_DEVICE
+  NumericArrayConverter(Params const& /* params */) {}
   static_assert(platform::is_same<Transform, cutlass::transform::thread::UnaryTransform::Identity>::value ||
                 platform::is_same<Transform, cutlass::transform::thread::UnaryTransform::Conjugate>::value,
                   "Unary Operator not supported.");
